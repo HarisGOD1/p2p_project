@@ -15,9 +15,9 @@ class PortIpSpoofer {
     //
     fun send(data: ByteArray,
              destinationIP: InetAddress,
-             destinationPort: Int,
+             destinationPort: Int?,
              sourceSpoofedIP: InetAddress,
-             sourceSpoofedPort: Int,
+             sourceSpoofedPort: Int?,
              protocol: String)
     {
         when(protocol) {
