@@ -22,7 +22,7 @@ kotlin {
 
 val nativeOutputDir = layout.buildDirectory.dir("native")
 
-tasks.register<Exec>("build_ip_forger.c") {
+tasks.register<Exec>("compile_ip_forger.c") {
     val output = nativeOutputDir.get().file("ip_forger").asFile
     doFirst {
         output.parentFile.mkdirs()
@@ -34,7 +34,7 @@ tasks.register<Exec>("build_ip_forger.c") {
         output.absolutePath
     )
 }
-tasks.register<Exec>("build_tcp_forger.c") {
+tasks.register<Exec>("compile_tcp_forger.c") {
     val output = nativeOutputDir.get().file("tcp_forger").asFile
     doFirst {
         output.parentFile.mkdirs()
@@ -46,7 +46,19 @@ tasks.register<Exec>("build_tcp_forger.c") {
         output.absolutePath
     )
 }
+tasks.register<Exec>("compile_udp_forger.c") {
+    val output = nativeOutputDir.get().file("udp_forger").asFile
+    doFirst {
+        output.parentFile.mkdirs()
+    }
+    commandLine(
+        "gcc",
+        "src/main/native/udp_forger.c",
+        "-o",
+        output.absolutePath
+    )
+}
 
 tasks.named("compileKotlin") {
-    dependsOn("build_ip_forger.c","build_tcp_forger.c")
+    dependsOn("compile_ip_forger.c","compile_tcp_forger.c","compile_udp_forger.c")
 }
