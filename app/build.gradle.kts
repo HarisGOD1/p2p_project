@@ -5,6 +5,8 @@ plugins {
 }
 
 dependencies {
+
+    implementation("io.libp2p:jvm-libp2p:1.2.2-RELEASE")
 }
 
 application {
