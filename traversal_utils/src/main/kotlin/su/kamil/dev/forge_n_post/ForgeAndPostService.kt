@@ -5,5 +5,5 @@ import su.kamil.dev.forge_n_post.post.PostService
 
 interface ForgeAndPostService: ForgeService, PostService {
     override fun makePacket(header: ByteArray,data: ByteArray): ByteArray
-    override fun sendPacket(packet: ByteArray)
+    override fun sendPacket(packet: ByteArray, offset: Int, length: Int)
 }

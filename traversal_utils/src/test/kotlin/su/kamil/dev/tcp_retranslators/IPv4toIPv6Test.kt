@@ -49,13 +49,13 @@ class IPv4toIPv6Test {
                 println("catch messages: ${String(byteReceived, Charsets.UTF_8)}")
             }
         })
-        val util = IPv4toIPv6()
-        val thIPv4toIPv6 = Thread({
-            util.run(senderIP, senderPort, receiverIP, receiverPort)
-        })
+//        val util = IPv4toIPv6()
+//        val thIPv4toIPv6 = Thread({
+//            util.run(senderIP, senderPort, receiverIP, receiverPort)
+//        })
         thIPv6.start()
         Thread.sleep(1000L)
-        thIPv4toIPv6.start()
+//        thIPv4toIPv6.start()
         Thread.sleep(1000L)
         thIPv4.start()
         Thread.sleep(1000L)

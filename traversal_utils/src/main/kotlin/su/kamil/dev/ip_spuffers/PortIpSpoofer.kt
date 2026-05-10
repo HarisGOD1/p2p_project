@@ -20,19 +20,19 @@ class PortIpSpoofer {
              sourceSpoofedPort: Int?,
              protocol: String)
     {
-        when(protocol) {
-            "tcp" -> tcpForge.sendPacket(
-                tcpForge.makePacket(TODO(), data)
-            )
-            "udp" -> udpForge.sendPacket(
-                udpForge.makePacket(TODO(),data))
-            "ip" -> ipForge.sendPacket(
-                ipForge.makePacket(TODO(),
-                    tcpForge.makePacket(TODO(),
-                        data)
-                )
-            )
-        }
+//        when(protocol) {
+//            "tcp" -> tcpForge.sendPacket(
+//                tcpForge.makePacket(TODO(), data)
+//            )
+//            "udp" -> udpForge.sendPacket(
+//                udpForge.makePacket(TODO(),data))
+//            "ip" -> ipForge.sendPacket(
+//                ipForge.makePacket(TODO(),
+//                    tcpForge.makePacket(TODO(),
+//                        data)
+//                )
+//            )
+//        }
 
 
     }
