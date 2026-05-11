@@ -7,12 +7,12 @@ import org.pcap4j.packet.IpV4Packet
 class IpPcap4JPostService {
     companion object : PostService {
 
-        private val allDevs: MutableList<PcapNetworkInterface>? = Pcaps.findAllDevs()
+        private val allInterfaces: MutableList<PcapNetworkInterface>? = Pcaps.findAllDevs()
 
-        private val nif: PcapNetworkInterface = allDevs!!.get(0)
+        private val networkInterface: PcapNetworkInterface = allInterfaces!!.get(0)
         private val snapLen: Int = 65536
         private val timeoutMillis: Int = 10
-        private val handle: PcapHandle = nif.openLive(snapLen, PromiscuousMode.PROMISCUOUS, timeoutMillis)
+        var handle: PcapHandle = networkInterface.openLive(snapLen, PromiscuousMode.PROMISCUOUS, timeoutMillis)
 
         private val postService = IpPcap4JPostService()
 
@@ -23,6 +23,20 @@ class IpPcap4JPostService {
                 IpV4Packet.newPacket(packet, offset, length)
             )
         }
+        fun closeHandle(){
+            handle.close();
+        }
+
+        fun selectHandleByInterfaceName(handleName: String){
+            val newNetworkInterface = allInterfaces!!.find { it.name == handleName }
+            if(newNetworkInterface != null) {
+                handle = newNetworkInterface.openLive(snapLen, PromiscuousMode.PROMISCUOUS, timeoutMillis)
+            }
+            else{
+                throw Exception("selected interface $handleName was not found")
+            }
+        }
+
     }
 
     /**
