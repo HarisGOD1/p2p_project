@@ -1,4 +1,4 @@
-package su.kamil.dev.example.chat
+package su.kamil.dev.chat.example
 
 import io.libp2p.core.PeerId
 import io.libp2p.core.Stream

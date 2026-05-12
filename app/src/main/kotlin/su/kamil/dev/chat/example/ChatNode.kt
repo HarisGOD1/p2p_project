@@ -1,4 +1,4 @@
-package su.kamil.dev.example.chat
+package su.kamil.dev.chat.example
 
 import io.libp2p.core.Discoverer
 import io.libp2p.core.PeerId
@@ -9,8 +9,6 @@ import io.libp2p.discovery.MDnsDiscovery
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
-import kotlin.collections.get
-import kotlin.text.get
 
 typealias OnMessage = (String) -> Unit
 

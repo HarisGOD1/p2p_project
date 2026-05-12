@@ -14,17 +14,16 @@ plugins {
 dependencies {
 
     implementation("io.libp2p:jvm-libp2p:1.2.2-RELEASE")
-
     implementation("io.netty:netty-all:4.2.13.Final")
-
     implementation("com.google.protobuf:protobuf-java:4.34.1")
+    runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.26.0")
 
     testImplementation(kotlin("test"))
 
 }
 
 application {
-    mainClass = "su.kamil.dev.app.AppKt"
+    mainClass = "su.kamil.dev.chat.example.ChatterCli"
 }
 
 protobuf {
