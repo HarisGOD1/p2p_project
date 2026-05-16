@@ -20,10 +20,12 @@ dependencies {
     implementation(project(":traversal_utils"))
     testImplementation(kotlin("test"))
 
+    implementation("org.pcap4j:pcap4j-core:1.8.2")
+    implementation("org.pcap4j:pcap4j-packetfactory-static:1.8.2")
 }
 
 application {
-    mainClass = "su.kamil.dev.chat.example.ChatterCli"
+    mainClass = "su.kamil.dev.chat.example.ChatterCliKt"
 }
 
 protobuf {

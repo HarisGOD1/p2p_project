@@ -32,9 +32,10 @@ class ChatNode(private val printMsg: OnMessage) {
         }
         network {
             listen("/ip4/$address/tcp/0")
+            listen("/ip4/$address/udp/0")
         }
         transports {
-//            TODO("put spoofed transport here")
+            + { _: io.libp2p.transport.ConnectionUpgrader -> su.kamil.dev.implementations.transport.udp.Pcap4JUdpTransport() }
         }
     }
 
@@ -114,10 +115,12 @@ class ChatNode(private val printMsg: OnMessage) {
     @Suppress("SwallowedException")
     private fun connectChat(info: PeerInfo): Pair<Stream, ChatController>? {
         try {
+            val addr = info.addresses.find { it.components.any { it.protocol == io.libp2p.core.multiformats.Protocol.UDP } }
+                ?: info.addresses[0]
             val chat = Chat(::messageReceived).dial(
                 chatHost,
                 info.peerId,
-                info.addresses[0]
+                addr
             )
             return Pair(
                 chat.stream.get(),

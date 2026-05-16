@@ -13,7 +13,7 @@ dependencies {
     testImplementation(kotlin("test"))
 
 
-    implementation("org.pcap4j:pcap4j-core:1.8.")
+    implementation("org.pcap4j:pcap4j-core:1.8.2")
     implementation("org.pcap4j:pcap4j-packetfactory-static:1.8.2")
 
     compileOnly("org.slf4j:slf4j-api:2.0.17")

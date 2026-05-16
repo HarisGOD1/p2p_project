@@ -5,25 +5,31 @@ import io.libp2p.core.Connection
 import io.libp2p.core.ConnectionHandler
 import io.libp2p.core.P2PChannel
 import io.libp2p.core.multiformats.Multiaddr
+import io.libp2p.core.multiformats.Protocol
 import io.libp2p.core.transport.Transport
+import org.pcap4j.packet.IpV4Packet
+import org.pcap4j.packet.UdpPacket
+import org.pcap4j.packet.namednumber.IpNumber
+import su.kamil.dev.forge_n_post.post.IpPcap4JPostService
 import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.concurrent.thread
 
-class Pcap4JUdpTransport: Transport {
+class Pcap4JUdpTransport : Transport {
 
-    // contains information about addresses, which are reach each other
-    // prefer first is destination addr
-    // second is source addr
-    // so, at any moment you just UdpPcap4JForge&Post(udpHoles[dest],dest,data..etc)
-    private val updHoles = mapOf<Multiaddr, Multiaddr>()
+    private val connections = ConcurrentHashMap<Multiaddr, Pcap4JConnection>()
+    private val listeners = ConcurrentHashMap<Multiaddr, CompletableFuture<Unit>>()
+    private var listeningThread: Thread? = null
 
-    // as UDP is stateless and connectionless (but are active holes maybe consider as connections?)
     override val activeConnections: Int
-        get() = 0
+        get() = connections.size
     override val activeListeners: Int
-        get() = 0
+        get() = listeners.size
 
     override fun close(): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+        connections.values.forEach { it.close() }
+        listeningThread?.interrupt()
+        return CompletableFuture.completedFuture(Unit)
     }
 
     override fun dial(
@@ -31,15 +37,59 @@ class Pcap4JUdpTransport: Transport {
         connHandler: ConnectionHandler,
         preHandler: ChannelVisitor<P2PChannel>?
     ): CompletableFuture<Connection> {
-        TODO("Not yet implemented")
+        val conn = Pcap4JConnection(
+            this,
+            listeners.keys.firstOrNull() ?: Multiaddr("/ip4/127.0.0.1/udp/0"),
+            addr,
+            true
+        )
+        connections[addr] = conn
+
+        val future = CompletableFuture<Connection>()
+
+        preHandler?.visit(conn)
+        connHandler.handleConnection(conn)
+        future.complete(conn)
+
+        return future
     }
 
     override fun handles(addr: Multiaddr): Boolean {
-        TODO("Not yet implemented")
+        return addr.components.any { it.protocol == Protocol.UDP }
     }
 
     override fun initialize() {
-        TODO("Not yet implemented")
+        if (listeningThread == null) {
+            listeningThread = thread(isDaemon = true, name = "PcapSniffer") {
+                try {
+                    val handle = IpPcap4JPostService.handle
+                    handle.loop(-1, org.pcap4j.core.PacketListener { packet ->
+                        val ipPacket = packet.get(IpV4Packet::class.java)
+                        if (ipPacket != null && ipPacket.header.protocol == IpNumber.UDP) {
+                            val udpPacket = ipPacket.get(UdpPacket::class.java)
+                            if (udpPacket != null) {
+                                val srcIp = ipPacket.header.srcAddr.hostAddress
+                                val srcPort = udpPacket.header.srcPort.valueAsInt()
+                                val remoteAddr = Multiaddr("/ip4/$srcIp/udp/$srcPort")
+                                
+                                val conn = connections[remoteAddr]
+                                if (conn != null) {
+                                    val payload = udpPacket.payload
+                                    if (payload != null) {
+                                        conn.receiveRaw(payload.rawData)
+                                    }
+                                } else {
+                                    // Potential new incoming connection
+                                    // For simplicity in this example, we don't auto-accept yet
+                                }
+                            }
+                        }
+                    })
+                } catch (e: Exception) {
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     override fun listen(
@@ -47,14 +97,19 @@ class Pcap4JUdpTransport: Transport {
         connHandler: ConnectionHandler,
         preHandler: ChannelVisitor<P2PChannel>?
     ): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+        val future = CompletableFuture<Unit>()
+        listeners[addr] = future
+        initialize()
+        future.complete(Unit)
+        return future
     }
 
     override fun listenAddresses(): List<Multiaddr> {
-        TODO("Not yet implemented")
+        return listeners.keys().toList()
     }
 
     override fun unlisten(addr: Multiaddr): CompletableFuture<Unit> {
-        TODO("Not yet implemented")
+        listeners.remove(addr)
+        return CompletableFuture.completedFuture(Unit)
     }
 }

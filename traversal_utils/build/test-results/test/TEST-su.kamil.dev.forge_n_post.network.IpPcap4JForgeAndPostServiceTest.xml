@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="su.kamil.dev.forge_n_post.network.IpPcap4JForgeAndPostServiceTest" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-05-16T18:12:03" hostname="toolbx" time="0.197">
+  <properties/>
+  <testcase name="testForgingFromByte()" classname="su.kamil.dev.forge_n_post.network.IpPcap4JForgeAndPostServiceTest" time="0.197"/>
+  <system-out><![CDATA[18:12:03.835 [Test worker] INFO org.pcap4j.util.PropertiesLoader -- [org/pcap4j/packet/packet.properties] Could not get value by org.pcap4j.packet.ipV4.calcChecksumAtBuild, use default value: true
+18:12:03.846 [Test worker] INFO org.pcap4j.packet.factory.PacketFactories -- A PacketFactoryBinderProvider implementation is found. ClassLoader: jdk.internal.loader.ClassLoaders$AppClassLoader@639fee48, URL: file:/var/home/core/.gradle/caches/modules-2/files-2.1/org.pcap4j/pcap4j-packetfactory-static/1.8.2/7e1ebc403dcfbb6e6f9d11e6f156285178f4cff5/pcap4j-packetfactory-static-1.8.2.jar
+18:12:03.850 [Test worker] INFO org.pcap4j.util.PropertiesLoader -- [org/pcap4j/pcap4j.properties] Could not get value by org.pcap4j.dlt.raw, use default value: 12
+18:12:03.930 [Test worker] INFO org.pcap4j.util.PropertiesLoader -- [org/pcap4j/pcap4j.properties] Could not get value by org.pcap4j.af.inet, use default value: 2
+18:12:03.930 [Test worker] INFO org.pcap4j.util.PropertiesLoader -- [org/pcap4j/pcap4j.properties] Could not get value by org.pcap4j.af.inet6, use default value: 10
+18:12:03.931 [Test worker] INFO org.pcap4j.util.PropertiesLoader -- [org/pcap4j/pcap4j.properties] Could not get value by org.pcap4j.af.packet, use default value: 17
+18:12:03.931 [Test worker] INFO org.pcap4j.util.PropertiesLoader -- [org/pcap4j/pcap4j.properties] Could not get value by org.pcap4j.af.link, use default value: 18
+18:12:03.947 [Test worker] INFO org.pcap4j.packet.factory.PacketFactories -- Succeeded in PacketFactoryBinderProvider.getBinder()
+[IPv4 Header (20 bytes)]
+  Version: 4 (IPv4)
+  IHL: 5 (20 [bytes])
+  TOS: [precedence: 0 (Routine)] [lowDelay: false] [highThroughput: false] [highReliability: false] [seventhBit: 0] [eighthBit: 0]
+  Total length: 20 [bytes]
+  Identification: 1234
+  Flags: (Reserved, Don't Fragment, More Fragment) = (false, false, false)
+  Fragment offset: 0 (0 [bytes])
+  TTL: 64
+  Protocol: 17 (UDP)
+  Header checksum: 0xa9f6
+  Source address: /192.168.1.100
+  Destination address: /10.0.0.5
+
+[IPv4 Header (20 bytes)]
+  Version: 4 (IPv4)
+  IHL: 5 (20 [bytes])
+  TOS: [precedence: 0 (Routine)] [tos: 0 (Default)] [mbz: 0]
+  Total length: 20 [bytes]
+  Identification: 1234
+  Flags: (Reserved, Don't Fragment, More Fragment) = (false, false, false)
+  Fragment offset: 0 (0 [bytes])
+  TTL: 64
+  Protocol: 17 (UDP)
+  Header checksum: 0xa9f6
+  Source address: /192.168.1.100
+  Destination address: /10.0.0.5
+
+]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

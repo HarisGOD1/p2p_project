@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="su.kamil.dev.tcp_retranslators.IPv4toIPv6Test" tests="1" skipped="0" failures="0" errors="0" timestamp="2026-05-16T18:12:13" hostname="toolbx" time="3.005">
+  <properties/>
+  <testcase name="test()" classname="su.kamil.dev.tcp_retranslators.IPv4toIPv6Test" time="3.005"/>
+  <system-out><![CDATA[ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+ipv4 sender sends message
+]]></system-out>
+  <system-err><![CDATA[Exception in thread "Thread-5" java.net.ConnectException: Connection refused
+	at java.base/sun.nio.ch.Net.pollConnect(Native Method)
+	at java.base/sun.nio.ch.Net.pollConnectNow(Net.java:694)
+	at java.base/sun.nio.ch.NioSocketImpl.timedFinishConnect(NioSocketImpl.java:542)
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:592)
+	at java.base/java.net.SocksSocketImpl.connect(SocksSocketImpl.java:327)
+	at java.base/java.net.Socket.connect(Socket.java:751)
+	at su.kamil.dev.tcp_retranslators.IPv4toIPv6Test.test$lambda$0(IPv4toIPv6Test.kt:26)
+	at java.base/java.lang.Thread.run(Thread.java:1583)
+]]></system-err>
+</testsuite>
