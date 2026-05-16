@@ -29,7 +29,7 @@ class UdpPcap4JForgeAndPostService {
      */
     @Throws(IllegalRawDataException::class)
     fun forgeUdpPacketFromBytes(rawHeader: ByteArray, payload: ByteArray?): UdpPacket {
-        require(!(rawHeader == null || rawHeader.size < 8)) { "Invalid UDP header: must be at least 8 bytes per RFC 768." }
+        require(rawHeader.size >= 8) { "Invalid UDP header: must be at least 8 bytes per RFC 768." }
 
         val payloadLen = if (payload != null) payload.size else 0
         val fullPacketData = ByteArray(rawHeader.size + payloadLen)
@@ -105,7 +105,7 @@ class UdpPcap4JForgeAndPostService {
      */
     @Throws(PcapNativeException::class, NotOpenException::class)
     fun sendForgedPacket(handle: PcapHandle, packet: Packet) {
-        require(!(handle == null || !handle.isOpen())) { "PcapHandle must be initialized and open." }
+        require(handle.isOpen()) { "PcapHandle must be initialized and open." }
 
         handle.sendPacket(packet)
     }

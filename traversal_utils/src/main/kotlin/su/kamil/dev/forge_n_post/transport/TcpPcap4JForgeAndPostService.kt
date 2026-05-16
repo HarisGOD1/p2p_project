@@ -29,7 +29,7 @@ class TcpPcap4JForgeAndPostService {
      */
     @Throws(IllegalRawDataException::class)
     fun forgeTcpPacketFromBytes(rawHeader: ByteArray, payload: ByteArray?): TcpPacket {
-        require(!(rawHeader == null || rawHeader.size < 20)) { "Invalid TCP header: must be at least 20 bytes per RFC 793." }
+        require(rawHeader.size >= 20) { "Invalid TCP header: must be at least 20 bytes per RFC 793." }
 
         val payloadLen = if (payload != null) payload.size else 0
         val fullPacketData = ByteArray(rawHeader.size + payloadLen)
@@ -133,7 +133,7 @@ class TcpPcap4JForgeAndPostService {
      */
     @Throws(PcapNativeException::class, NotOpenException::class)
     fun sendForgedPacket(handle: PcapHandle, packet: Packet) {
-        require(!(handle == null || !handle.isOpen())) { "PcapHandle must be initialized and open." }
+        require(handle.isOpen()) { "PcapHandle must be initialized and open." }
 
         handle.sendPacket(packet)
     }

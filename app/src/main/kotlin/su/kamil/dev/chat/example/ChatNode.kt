@@ -23,12 +23,18 @@ class ChatNode(private val printMsg: OnMessage) {
     private val peerFinder: Discoverer
     private val peers = mutableMapOf<PeerId, Friend>()
     private val privateAddress: InetAddress = privateNetworkAddress()
+    // chatHost -- is chat server at client,
+    // host {...} is equal to execute function: host({...}) -- block of code is just one of arguments of host function.
+    //
     private val chatHost = host {
         protocols {
-            +Chat(::messageReceived)
+            +Chat(::messageReceived)  //
         }
         network {
             listen("/ip4/$address/tcp/0")
+        }
+        transports {
+//            TODO("put spoofed transport here")
         }
     }
 
@@ -90,7 +96,8 @@ class ChatNode(private val printMsg: OnMessage) {
 
         knownNodes.add(info.peerId)
 
-        val chatConnection = connectChat(info) ?: return
+        val chatConnection = connectChat(info) ?: return // actual connection with peer
+        // code to execute when peer disconnected
         chatConnection.first.closeFuture().thenAccept {
             printMsg("${peers[info.peerId]?.name} disconnected.")
             peers.remove(info.peerId)

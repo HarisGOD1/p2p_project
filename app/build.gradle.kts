@@ -17,7 +17,7 @@ dependencies {
     implementation("io.netty:netty-all:4.2.13.Final")
     implementation("com.google.protobuf:protobuf-java:4.34.1")
     runtimeOnly("org.apache.logging.log4j:log4j-slf4j2-impl:2.26.0")
-
+    implementation(project(":traversal_utils"))
     testImplementation(kotlin("test"))
 
 }

@@ -9,7 +9,7 @@ class ChatterCli {
         print(">> ")
     }
     fun runChat() {
-        val node = ChatNode(::printAndLn)
+        val node = ChatNode(::printAndLn) // setup output stream, which are a function type: string -> Unit(aka java's Void)
 
         println()
         println("Libp2p Chatter!")

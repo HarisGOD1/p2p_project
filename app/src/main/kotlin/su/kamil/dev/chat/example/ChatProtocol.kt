@@ -22,8 +22,10 @@ class Chat(chatCallback: OnChatMessage) : ChatBinding(ChatProtocol(chatCallback)
 
 const val PROTOCOL_ID: ProtocolId = "/example/chat/0.1.0"
 
+//
 open class ChatBinding(echo: ChatProtocol) : StrictProtocolBinding<ChatController>(PROTOCOL_ID, echo)
 
+// that's all reach way to make class chatter in play
 open class ChatProtocol(
     private val chatCallback: OnChatMessage
 ) : ProtocolHandler<ChatController>(Long.MAX_VALUE, Long.MAX_VALUE) {
