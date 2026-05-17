@@ -1,4 +1,3 @@
-!gradle/wrapper/gradle-wrapper.jar
 !**/src/main/**/build/
 !**/src/test/**/build/
 
@@ -45,10 +44,7 @@ bin/
 /gradlew.bat
 /gradle.properties
 /.idea/gradle.xml
-/gradle/wrapper/gradle-wrapper.jar
-/gradle/wrapper/gradle-wrapper.properties
 /.idea/kotlinc.xml
-/gradle/libs.versions.toml
 /.idea/markdown.xml
 /.idea/misc.xml
 /.idea/vcs.xml
@@ -61,3 +57,4 @@ bin/
 /app/build/
 /traversal_utils/build/
 /build/reports/problems/problems-report.html
+/build/reports/configuration-cache/79zujk45d62uqdy3n2ryyf6ec/1fxrb90uq8kn112czcmeg2a18/configuration-cache-report.html
