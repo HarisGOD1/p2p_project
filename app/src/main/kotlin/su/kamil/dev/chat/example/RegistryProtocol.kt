@@ -20,15 +20,20 @@ interface RegistryController {
 }
 
 typealias OnRegistryMessage = (PeerId, String) -> Unit
+typealias OnControllerReady = (PeerId, RegistryController) -> Unit
 
-class Registry(registryCallback: OnRegistryMessage) : RegistryBinding(RegistryProtocol(registryCallback))
+class Registry(
+    registryCallback: OnRegistryMessage,
+    onControllerReady: OnControllerReady? = null
+) : RegistryBinding(RegistryProtocol(registryCallback, onControllerReady))
 
 const val REGISTRY_PROTOCOL_ID: ProtocolId = "/example/registry/0.1.0"
 
 open class RegistryBinding(protocol: RegistryProtocol) : StrictProtocolBinding<RegistryController>(REGISTRY_PROTOCOL_ID, protocol)
 
 open class RegistryProtocol(
-    private val registryCallback: OnRegistryMessage
+    private val registryCallback: OnRegistryMessage,
+    private val onControllerReady: OnControllerReady? = null
 ) : ProtocolHandler<RegistryController>(Long.MAX_VALUE, Long.MAX_VALUE) {
 
     override fun onStartInitiator(stream: Stream) = onStart(stream)
@@ -36,19 +41,21 @@ open class RegistryProtocol(
 
     private fun onStart(stream: Stream): CompletableFuture<RegistryController> {
         val ready = CompletableFuture<Void>()
-        val handler = RegistryHandler(registryCallback, ready)
+        val handler = RegistryHandler(registryCallback, onControllerReady, ready)
         stream.pushHandler(handler)
         return ready.thenApply { handler }
     }
 
     open inner class RegistryHandler(
         private val registryCallback: OnRegistryMessage,
+        private val onControllerReady: OnControllerReady?,
         val ready: CompletableFuture<Void>
     ) : ProtocolMessageHandler<ByteBuf>, RegistryController {
         lateinit var stream: Stream
 
         override fun onActivated(stream: Stream) {
             this.stream = stream
+            onControllerReady?.invoke(stream.remotePeerId(), this)
             ready.complete(null)
         }
 

@@ -13,7 +13,11 @@ import java.net.NetworkInterface
 
 typealias OnMessage = (String) -> Unit
 
-class ChatNode(private val printMsg: OnMessage) {
+class ChatNode(
+    private val printMsg: OnMessage,
+    val listenAddr: String? = null,
+    val listenPort: Int = 0
+) {
     private data class Friend(
         var name: String,
         val controller: ChatController
@@ -23,7 +27,7 @@ class ChatNode(private val printMsg: OnMessage) {
     private val knownNodes = mutableSetOf<PeerId>()
     private val peerFinder: Discoverer
     private val peers = mutableMapOf<PeerId, Friend>()
-    private val privateAddress: InetAddress = privateNetworkAddress()
+    private val privateAddress: InetAddress = if (listenAddr != null) InetAddress.getByName(listenAddr) else privateNetworkAddress()
     
     // Registry state
     private val registeredPeers = mutableMapOf<String, String>()
@@ -37,13 +41,14 @@ class ChatNode(private val printMsg: OnMessage) {
     private val chatHost = host {
         protocols {
             +Chat(::messageReceived)
-            +Registry(::registryMessageReceived)
+            +Registry(::registryMessageReceived, ::onRegistryControllerReady)
         }
         network {
-            listen("/ip4/$address/tcp/0")
-            listen("/ip4/$address/udp/0")
+            listen("/ip4/$address/tcp/$listenPort")
+            listen("/ip4/$address/udp/$listenPort")
         }
         transports {
+            + { upgrader: io.libp2p.transport.ConnectionUpgrader -> io.libp2p.transport.tcp.TcpTransport(upgrader) }
             + { _: io.libp2p.transport.ConnectionUpgrader -> pcapTransport }
         }
     }
@@ -58,10 +63,49 @@ class ChatNode(private val printMsg: OnMessage) {
         chatHost.start().get()
         currentAlias = chatHost.peerId.toBase58()
 
+        // Handle incoming protocol streams
+        chatHost.addProtocolHandler(Chat(::messageReceived))
+        chatHost.addProtocolHandler(Registry(::registryMessageReceived, ::onRegistryControllerReady))
+
         peerFinder = MDnsDiscovery(chatHost, address = privateAddress)
         peerFinder.newPeerFoundListeners += { peerFound(it) }
         peerFinder.start()
     } // init
+
+    private fun onRegistryControllerReady(id: PeerId, controller: RegistryController) {
+        registryControllers[id] = controller
+        printMsg("Registry controller ready for $id")
+    }
+
+    fun connectToNode(ip: String, port: Int, remotePeerId: String) {
+        val targetPeerId = PeerId.fromBase58(remotePeerId)
+        val addr = Multiaddr("/ip4/$ip/tcp/$port")
+        
+        printMsg("Dialing $targetPeerId at $addr...")
+        
+        val chat = Chat(::messageReceived).dial(chatHost, targetPeerId, addr)
+        chat.controller.thenAccept { controller ->
+            chat.stream.thenAccept { stream ->
+                peers[targetPeerId] = Friend(targetPeerId.toBase58(), controller)
+                stream.closeFuture().thenAccept {
+                    printMsg("Disconnected from $targetPeerId")
+                    peers.remove(targetPeerId)
+                    registryControllers.remove(targetPeerId)
+                }
+                controller.send("/who")
+                printMsg("Connected to $targetPeerId")
+            }
+        }.exceptionally { e ->
+            printMsg("Failed to connect to $targetPeerId: ${e.message}")
+            null
+        }
+
+        Registry(::registryMessageReceived).dial(chatHost, targetPeerId, addr)
+            .controller.thenAccept {
+                registryControllers[targetPeerId] = it
+                printMsg("Registry protocol active for $targetPeerId")
+            }
+    }
 
     fun connectSpoofed(remoteIp: String, remotePort: Int, spoofIp: String, spoofPort: Int, remotePeerId: String? = null) {
         val remoteAddr = Multiaddr("/ip4/$remoteIp/udp/$remotePort")
