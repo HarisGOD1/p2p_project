@@ -58,3 +58,6 @@ bin/
 
 /buildSrc/.gradle/
 /buildSrc/build/
+/app/build/
+/traversal_utils/build/
+/build/reports/problems/problems-report.html
