@@ -26,6 +26,9 @@ class Pcap4JConnection(
     private val udpForge = UdpPcap4JForgeAndPostService()
     private val ipForge = IpPcap4JForgeService()
 
+    var spoofedSrcIp: String? = null
+    var spoofedSrcPort: Int? = null
+
     private val localHost = localAddr.components.find { it.protocol == Protocol.IP4 }?.stringValue ?: "127.0.0.1"
     private val localPort = localAddr.components.find { it.protocol == Protocol.UDP }?.stringValue?.toInt() ?: 0
     private val remoteHost = remoteAddr.components.find { it.protocol == Protocol.IP4 }?.stringValue ?: "127.0.0.1"
@@ -48,17 +51,25 @@ class Pcap4JConnection(
     }
 
     private fun sendRaw(data: ByteArray) {
-        val srcIp = Inet4Address.getByName(localHost) as Inet4Address
-        val dstIp = Inet4Address.getByName(remoteHost) as Inet4Address
-        
-        val udpPacket = udpForge.forgeUdpPacket(
-            srcIp, dstIp, localPort.toShort(), remotePort.toShort(), data
-        )
-        val ipPacket = ipForge.forgeIpPacket(
-            srcIp, dstIp, IpNumber.UDP, 64.toByte(), 0.toShort(), 0.toByte(), 0.toShort(), udpPacket.rawData
-        )
-        
-        IpPcap4JPostService.sendPacket(ipPacket.rawData, 0, ipPacket.rawData.size)
+        try {
+            val srcIpHost = spoofedSrcIp ?: localHost
+            val srcPortValue = spoofedSrcPort ?: localPort
+            val srcIp = Inet4Address.getByName(srcIpHost) as Inet4Address
+            val dstIp = Inet4Address.getByName(remoteHost) as Inet4Address
+            
+            val udpPacket = udpForge.forgeUdpPacket(
+                srcIp, dstIp, srcPortValue.toShort(), remotePort.toShort(), data
+            )
+            val ipPacket = ipForge.forgeIpPacket(
+                srcIp, dstIp, IpNumber.UDP, 64.toByte(), 0.toShort(), 0.toByte(), 0.toShort(), udpPacket.rawData
+            )
+            
+            // Note: If on Ethernet, this might need wrapping in an EthernetPacket.
+            // For now, we follow the existing pattern in traversal_utils.
+            IpPcap4JPostService.sendPacket(ipPacket.rawData, 0, ipPacket.rawData.size)
+        } catch (e: Exception) {
+            System.err.println("Failed to send spoofed packet: ${e.message}")
+        }
     }
 
     fun receiveRaw(data: ByteArray) {

@@ -5,6 +5,7 @@ import io.libp2p.core.PeerId
 import io.libp2p.core.PeerInfo
 import io.libp2p.core.Stream
 import io.libp2p.core.dsl.host
+import io.libp2p.core.multiformats.Multiaddr
 import io.libp2p.discovery.MDnsDiscovery
 import java.net.Inet4Address
 import java.net.InetAddress
@@ -23,19 +24,27 @@ class ChatNode(private val printMsg: OnMessage) {
     private val peerFinder: Discoverer
     private val peers = mutableMapOf<PeerId, Friend>()
     private val privateAddress: InetAddress = privateNetworkAddress()
+    
+    // Registry state
+    private val registeredPeers = mutableMapOf<String, String>()
+    private val registryControllers = mutableMapOf<PeerId, RegistryController>()
+
+    private val pcapTransport = su.kamil.dev.implementations.transport.udp.Pcap4JUdpTransport()
+    
     // chatHost -- is chat server at client,
     // host {...} is equal to execute function: host({...}) -- block of code is just one of arguments of host function.
     //
     private val chatHost = host {
         protocols {
-            +Chat(::messageReceived)  //
+            +Chat(::messageReceived)
+            +Registry(::registryMessageReceived)
         }
         network {
             listen("/ip4/$address/tcp/0")
             listen("/ip4/$address/udp/0")
         }
         transports {
-            + { _: io.libp2p.transport.ConnectionUpgrader -> su.kamil.dev.implementations.transport.udp.Pcap4JUdpTransport() }
+            + { _: io.libp2p.transport.ConnectionUpgrader -> pcapTransport }
         }
     }
 
@@ -54,6 +63,60 @@ class ChatNode(private val printMsg: OnMessage) {
         peerFinder.start()
     } // init
 
+    fun connectSpoofed(remoteIp: String, remotePort: Int, spoofIp: String, spoofPort: Int, remotePeerId: String? = null) {
+        val remoteAddr = Multiaddr("/ip4/$remoteIp/udp/$remotePort")
+        pcapTransport.setSpoofedSource(remoteAddr, spoofIp, spoofPort)
+        
+        printMsg("Initiating spoofed connection to $remoteAddr (spoofing as $spoofIp:$spoofPort)")
+        
+        if (remotePeerId != null) {
+             val peerId = PeerId.fromBase58(remotePeerId)
+             Chat(::messageReceived).dial(chatHost, peerId, remoteAddr)
+        } else {
+             printMsg("No PeerId provided, only hole-punching packet will be sent if data is written.")
+             // In libp2p, you can't easily dial without a PeerId unless you use a lower level
+             // For the sake of the concept, we've set up the transport mapping.
+        }
+    }
+
+    fun registerSelf(publicPeerId: String) {
+        val id = PeerId.fromBase58(publicPeerId)
+        val controller = registryControllers[id]
+        if (controller != null) {
+            // Find our local UDP port
+            val localUdpPort = chatHost.listenAddresses().find { 
+                it.components.any { c -> c.protocol == io.libp2p.core.multiformats.Protocol.UDP } 
+            }?.components?.find { it.protocol == io.libp2p.core.multiformats.Protocol.UDP }?.stringValue?.toInt() ?: 0
+            
+            controller.sendRegister(address, localUdpPort)
+            printMsg("Sent registration to $publicPeerId as $address:$localUdpPort")
+        } else {
+            printMsg("Not connected to node $publicPeerId over Registry protocol.")
+        }
+    }
+
+    fun listPeers(publicPeerId: String) {
+        val id = PeerId.fromBase58(publicPeerId)
+        val controller = registryControllers[id]
+        if (controller != null) {
+            controller.sendListRequest()
+            printMsg("Requested peer list from $publicPeerId")
+        } else {
+            printMsg("Not connected to node $publicPeerId over Registry protocol.")
+        }
+    }
+
+    fun requestHolePunch(publicPeerId: String, targetPeerId: String, spoofedPort: Int) {
+        val id = PeerId.fromBase58(publicPeerId)
+        val controller = registryControllers[id]
+        if (controller != null) {
+            controller.sendPunchRequest(targetPeerId, spoofedPort)
+            printMsg("Sent punch request for $targetPeerId to $publicPeerId with port $spoofedPort")
+        } else {
+            printMsg("Not connected to node $publicPeerId over Registry protocol.")
+        }
+    }
+
     fun send(message: String) {
         peers.values.forEach { it.controller.send(message) }
 
@@ -66,6 +129,57 @@ class ChatNode(private val printMsg: OnMessage) {
         peerFinder.stop()
         chatHost.stop()
     } // stop
+
+    private fun registryMessageReceived(id: PeerId, msg: String) {
+        if (msg.startsWith("REG ")) {
+            val addr = msg.substring(4)
+            registeredPeers[id.toBase58()] = addr
+            printMsg("Node ${id.toBase58()} registered at $addr")
+        } else if (msg == "REQ_LIST") {
+            val controller = registryControllers[id]
+            if (controller != null) {
+                controller.sendListResponse(registeredPeers)
+                printMsg("Sent peer list to ${id.toBase58()}")
+            }
+        } else if (msg.startsWith("RES_LIST ")) {
+            val list = msg.substring(9)
+            printMsg("--- Registered Peers ---")
+            list.split(",").forEach { 
+                if (it.isNotBlank()) {
+                    printMsg(it)
+                }
+            }
+            printMsg("------------------------")
+        } else if (msg.startsWith("REQ_PUNCH ")) {
+            val parts = msg.substring(10).split(" ")
+            if (parts.size == 2) {
+                val targetId = parts[0]
+                val port = parts[1].toInt()
+                val targetPeerId = PeerId.fromBase58(targetId)
+                val controller = registryControllers[targetPeerId]
+                if (controller != null) {
+                    controller.sendIncomingPunch(id.toBase58(), port)
+                    printMsg("Relaying punch request from ${id.toBase58()} to $targetId")
+                } else {
+                    printMsg("Cannot relay punch: Target $targetId not connected.")
+                }
+            }
+        } else if (msg.startsWith("INCOMING_PUNCH ")) {
+            val parts = msg.substring(15).split(" ")
+            if (parts.size == 2) {
+                val sourceId = parts[0]
+                val port = parts[1]
+                val publicIp = registryControllers[id]?.let {
+                    // Try to get the IP from the stream's connection
+                    // Since we don't have direct access easily, we might just print what we know
+                    "PublicNodeIP" 
+                } ?: "PublicNodeIP"
+                printMsg("!!! INCOMING PUNCH ALERT !!!")
+                printMsg("Peer $sourceId is about to spoof $publicIp:$port to reach you.")
+                printMsg("Please use 'spoof' command when B initiates connection if needed.")
+            }
+        }
+    }
 
     private fun messageReceived(id: PeerId, msg: String) {
         if (msg == "/who") {
@@ -103,6 +217,7 @@ class ChatNode(private val printMsg: OnMessage) {
             printMsg("${peers[info.peerId]?.name} disconnected.")
             peers.remove(info.peerId)
             knownNodes.remove(info.peerId)
+            registryControllers.remove(info.peerId)
         }
         printMsg("Connected to new peer ${info.peerId}")
         chatConnection.second.send("/who")
@@ -110,6 +225,13 @@ class ChatNode(private val printMsg: OnMessage) {
             info.peerId.toBase58(),
             chatConnection.second
         )
+
+        // Also connect to Registry protocol
+        Registry(::registryMessageReceived).dial(chatHost, info.peerId, info.addresses[0])
+            .controller.thenAccept {
+                registryControllers[info.peerId] = it
+                printMsg("Registry protocol active for ${info.peerId}")
+            }
     } // peerFound
 
     @Suppress("SwallowedException")

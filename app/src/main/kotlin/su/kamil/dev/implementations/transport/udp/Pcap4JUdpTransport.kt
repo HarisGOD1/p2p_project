@@ -19,7 +19,12 @@ class Pcap4JUdpTransport : Transport {
 
     private val connections = ConcurrentHashMap<Multiaddr, Pcap4JConnection>()
     private val listeners = ConcurrentHashMap<Multiaddr, CompletableFuture<Unit>>()
+    private val spoofedMapping = ConcurrentHashMap<Multiaddr, Pair<String, Int>>()
     private var listeningThread: Thread? = null
+
+    fun setSpoofedSource(remoteAddr: Multiaddr, spoofedIp: String, spoofedPort: Int) {
+        spoofedMapping[remoteAddr] = Pair(spoofedIp, spoofedPort)
+    }
 
     override val activeConnections: Int
         get() = connections.size
@@ -43,6 +48,13 @@ class Pcap4JUdpTransport : Transport {
             addr,
             true
         )
+        
+        val spoofed = spoofedMapping[addr]
+        if (spoofed != null) {
+            conn.spoofedSrcIp = spoofed.first
+            conn.spoofedSrcPort = spoofed.second
+        }
+        
         connections[addr] = conn
 
         val future = CompletableFuture<Connection>()
