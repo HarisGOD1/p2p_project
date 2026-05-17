@@ -164,8 +164,8 @@ class ChatNode(
     fun send(message: String) {
         peers.values.forEach { it.controller.send(message) }
 
-        if (message.startsWith("alias ")) {
-            currentAlias = message.substring(6).trim()
+        if (message.startsWith("/alias ")) {
+            currentAlias = message.substring(7).trim()
         }
     } // send
 
@@ -227,13 +227,13 @@ class ChatNode(
 
     private fun messageReceived(id: PeerId, msg: String) {
         if (msg == "/who") {
-            peers[id]?.controller?.send("alias $currentAlias")
+            peers[id]?.controller?.send("/alias $currentAlias")
             return
         }
-        if (msg.startsWith("alias ")) {
+        if (msg.startsWith("/alias ")) {
             val friend = peers[id] ?: return
             val previousAlias = friend.name
-            val newAlias = msg.substring(6).trim()
+            val newAlias = msg.substring(7).trim()
             if (previousAlias != newAlias) {
                 friend.name = newAlias
                 printMsg("$previousAlias is now $newAlias")

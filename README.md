@@ -41,33 +41,33 @@ sudo -E "JAVA_HOME=$JAVA_HOME" "PATH=$PATH" app/build/install/app/bin/app
 3.  **Host B**: A node that wants to connect to Host A using spoofing.
 
 ### CLI Commands
-- `register <publicPeerId>`: Register your local gray IP/Port with the public node.
-- `list <publicPeerId>`: Fetch the list of all registered peers from the public node.
-- `punch <publicPeerId> <targetPeerId> <spoofedPort>`: Coordinate a hole punch via the public node.
-- `spoof <remoteIp> <remotePort> <spoofIp> <spoofPort> [remotePeerId]`: Initiate a direct connection using raw packet spoofing.
-- `alias <name>`: Set your display name in the chat.
-- `bye`: Quit the application.
+- `/register <publicPeerId>`: Register your local gray IP/Port with the public node.
+- `/list <publicPeerId>`: Fetch the list of all registered peers from the public node.
+- `/punch <publicPeerId> <targetPeerId> <spoofedPort>`: Coordinate a hole punch via the public node.
+- `/spoof <remoteIp> <remotePort> <spoofIp> <spoofPort> [remotePeerId]`: Initiate a direct connection using raw packet spoofing.
+- `/alias <name>`: Set your display name in the chat.
+- `/bye`: Quit the application.
 
 ### NAT Traversal Workflow (The Spoofing Technique)
 
 1.  **Setup Public Node**: Start an instance of the app on a public server. Note its `PeerId`.
 2.  **Host A Registration**: Host A connects to P and registers:
     ```
-    >> register <P_PeerId>
+    >> /register <P_PeerId>
     ```
 3.  **Host B Discovery**: Host B connects to P and fetches A's details:
     ```
-    >> list <P_PeerId>
+    >> /list <P_PeerId>
     # Note Host A's PeerId and Gray IP/Port
     ```
 4.  **Signaling**: Host B coordinates the punch through P:
     ```
-    >> punch <P_PeerId> <A_PeerId> 5555
+    >> /punch <P_PeerId> <A_PeerId> 5555
     ```
     *Host A will see a notification: `Peer B is about to spoof P_IP:5555`.*
 5.  **Spoofed Connection**: Host B initiates the connection to Host A's gray IP, spoofing Host P's IP and the coordinated port:
     ```
-    >> spoof <A_GrayIp> <A_GrayPort> <P_IP> 5555 <A_PeerId>
+    >> /spoof <A_GrayIp> <A_GrayPort> <P_IP> 5555 <A_PeerId>
     ```
 6.  **Chat**: Once the connection is established, Host A and Host B can exchange messages directly.
 

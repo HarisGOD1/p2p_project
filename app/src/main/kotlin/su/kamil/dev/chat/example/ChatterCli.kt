@@ -22,73 +22,77 @@ class ChatterCli {
         println("Listening on ${node.address}:${node.listenPort}")
         println()
         println("Commands:")
-        println("  dial <ip> <port> <peerId>  - Connect to a remote node")
-        println("  register <publicPeerId>    - Register with a public node")
-        println("  list <publicPeerId>        - List registered peers")
-        println("  punch <pubId> <tgtId> <p>  - Request hole punch")
-        println("  spoof <rIp> <rP> <sIp> <sP> [rId] - Direct spoofed connection")
-        println("  alias <name>               - Set chat name")
-        println("  bye                        - Quit")
+        println("  /dial <ip> <p> <id>        - Connect to a remote node")
+        println("  /register <publicPeerId>   - Register with a public node")
+        println("  /list <publicPeerId>       - List registered peers")
+        println("  /punch <pubId> <tgtId> <p> - Request hole punch")
+        println("  /spoof <rIp> <rP> <sIp> <sP> [rId] - Direct spoofed connection")
+        println("  /alias <name>              - Set chat name")
+        println("  /bye                       - Quit")
         println()
 
-
-        do {
-            var message: String?
-
+        while (true) {
             print(">> ")
-            message = readln().trim()
+            val message = readln().trim()
+            if (message.isEmpty()) continue
 
-            if (message.startsWith("dial ")) {
+            if (message.startsWith("/")) {
                 val parts = message.split("\\s+".toRegex())
-                if (parts.size == 4) {
-                    val ip = parts[1]
-                    val port = parts[2].toInt()
-                    val peerId = parts[3]
-                    node.connectToNode(ip, port, peerId)
-                } else {
-                    println("Usage: dial <ip> <port> <peerId>")
-                }
-            } else if (message.startsWith("spoof ")) {
-                val parts = message.split("\\s+".toRegex())
-                if (parts.size >= 5) {
-                    val remoteIp = parts[1]
-                    val remotePort = parts[2].toInt()
-                    val spoofIp = parts[3]
-                    val spoofPort = parts[4].toInt()
-                    val remotePeerId = if (parts.size > 5) parts[5] else null
-                    node.connectSpoofed(remoteIp, remotePort, spoofIp, spoofPort, remotePeerId)
-                } else {
-                    println("Usage: spoof <remoteIp> <remotePort> <spoofIp> <spoofPort> [remotePeerId]")
-                }
-            } else if (message.startsWith("register ")) {
-                val parts = message.split("\\s+".toRegex())
-                if (parts.size == 2) {
-                    node.registerSelf(parts[1])
-                } else {
-                    println("Usage: register <publicPeerId>")
-                }
-            } else if (message.startsWith("list ")) {
-                val parts = message.split("\\s+".toRegex())
-                if (parts.size == 2) {
-                    node.listPeers(parts[1])
-                } else {
-                    println("Usage: list <publicPeerId>")
-                }
-            } else if (message.startsWith("punch ")) {
-                val parts = message.split("\\s+".toRegex())
-                if (parts.size == 4) {
-                    val publicPeerId = parts[1]
-                    val targetPeerId = parts[2]
-                    val port = parts[3].toInt()
-                    node.requestHolePunch(publicPeerId, targetPeerId, port)
-                } else {
-                    println("Usage: punch <publicPeerId> <targetPeerId> <spoofedPort>")
+                val command = parts[0].lowercase()
+
+                when (command) {
+                    "/dial" -> {
+                        if (parts.size == 4) {
+                            node.connectToNode(parts[1], parts[2].toInt(), parts[3])
+                        } else {
+                            println("Usage: /dial <ip> <port> <peerId>")
+                        }
+                    }
+                    "/spoof" -> {
+                        if (parts.size >= 5) {
+                            val remotePeerId = if (parts.size > 5) parts[5] else null
+                            node.connectSpoofed(parts[1], parts[2].toInt(), parts[3], parts[4].toInt(), remotePeerId)
+                        } else {
+                            println("Usage: /spoof <remoteIp> <remotePort> <spoofIp> <spoofPort> [remotePeerId]")
+                        }
+                    }
+                    "/register" -> {
+                        if (parts.size == 2) {
+                            node.registerSelf(parts[1])
+                        } else {
+                            println("Usage: /register <publicPeerId>")
+                        }
+                    }
+                    "/list" -> {
+                        if (parts.size == 2) {
+                            node.listPeers(parts[1])
+                        } else {
+                            println("Usage: /list <publicPeerId>")
+                        }
+                    }
+                    "/punch" -> {
+                        if (parts.size == 4) {
+                            node.requestHolePunch(parts[1], parts[2], parts[3].toInt())
+                        } else {
+                            println("Usage: /punch <publicPeerId> <targetPeerId> <spoofedPort>")
+                        }
+                    }
+                    "/alias" -> {
+                        if (parts.size >= 2) {
+                            node.send(message) // ChatNode handles /alias internally
+                        } else {
+                            println("Usage: /alias <name>")
+                        }
+                    }
+                    "/bye" -> {
+                        node.stop()
+                        return
+                    }
+                    else -> println("Unknown command: $command")
                 }
             } else {
                 node.send(message)
             }
-        } while ("bye" != message)
-
-        node.stop()
+        }
     }
 }
