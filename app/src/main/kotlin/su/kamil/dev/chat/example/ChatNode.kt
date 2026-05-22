@@ -7,6 +7,8 @@ import io.libp2p.core.Stream
 import io.libp2p.core.dsl.host
 import io.libp2p.core.multiformats.Multiaddr
 import io.libp2p.discovery.MDnsDiscovery
+import io.libp2p.transport.ConnectionUpgrader
+import io.libp2p.transport.tcp.TcpTransport
 import java.net.Inet4Address
 import java.net.InetAddress
 import java.net.NetworkInterface
@@ -48,8 +50,8 @@ class ChatNode(
             listen("/ip4/$address/udp/$listenPort")
         }
         transports {
-            + { upgrader: io.libp2p.transport.ConnectionUpgrader -> io.libp2p.transport.tcp.TcpTransport(upgrader) }
-            + { _: io.libp2p.transport.ConnectionUpgrader -> pcapTransport }
+            + { upgrader: ConnectionUpgrader -> TcpTransport(upgrader) }
+            + { _: ConnectionUpgrader -> pcapTransport }
         }
     }
 

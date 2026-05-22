@@ -27,13 +27,13 @@ class IpPcap4JPostService {
             handle.close();
         }
 
-        fun selectHandleByInterfaceName(handleName: String){
-            val newNetworkInterface = allInterfaces!!.find { it.name == handleName }
+        fun selectHandleByInterfaceName(interfaceName: String){
+            val newNetworkInterface = allInterfaces!!.find { it.name == interfaceName }
             if(newNetworkInterface != null) {
                 handle = newNetworkInterface.openLive(snapLen, PromiscuousMode.PROMISCUOUS, timeoutMillis)
             }
             else{
-                throw Exception("selected interface $handleName was not found")
+                throw Exception("selected interface $interfaceName was not found")
             }
         }
 
